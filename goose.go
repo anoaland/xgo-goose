@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
+	"math/rand"
 	"text/template"
 
 	petname "github.com/dustinkirkland/golang-petname"
@@ -59,7 +60,8 @@ func (g GooseMigrator) Create() {
 }
 
 func (g GooseMigrator) CreateWithStatement(up string, down string) {
-	name := petname.Generate(1, "")
+	randomNumber := rand.Intn(3) + 1
+	name := petname.Generate(randomNumber, "_")
 	goose.SetBaseFS(g.fsys)
 
 	sqlMigrationTemplate := template.Must(template.New("goose.sql-migration").Parse(fmt.Sprintf(`-- +goose Up
