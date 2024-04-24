@@ -18,39 +18,53 @@ import (
 )
 
 type GooseMigrator struct {
-	db       *sql.DB
-	fsys     fs.FS
-	provider *goose.Provider
-	dir      string
+	db         *sql.DB
+	fsys       fs.FS
+	provider   *goose.Provider
+	dir        string
+	noMigraion bool
 }
 
 func NewMigrator(dialect database.Dialect, dsn string, fsys fs.FS, dir string) GooseMigrator {
-	db, err := goose.OpenDBWithDriver(string(goose.DialectMSSQL), dsn)
+	db, err := goose.OpenDBWithDriver(string(dialect), dsn)
 	if err != nil {
 		panic(err)
 	}
 
 	provider, err := goose.NewProvider(
-		goose.DialectMSSQL,
+		dialect,
 		db,
 		fsys,
 	)
 	goose.SetBaseFS(fsys)
 
+	noMigraion := false
 	if err != nil {
-		panic(err)
+		if err == goose.ErrNoMigrations {
+			noMigraion = true
+		} else {
+			panic(err)
+		}
 	}
 
 	return GooseMigrator{
-		db:       db,
-		fsys:     fsys,
-		provider: provider,
-		dir:      dir,
+		db:         db,
+		fsys:       fsys,
+		provider:   provider,
+		noMigraion: noMigraion,
+		dir:        dir,
 	}
 }
 
+func (g GooseMigrator) generateName() string {
+	randomNumber := rand.Intn(3) + 1
+	name := petname.Generate(randomNumber, "_")
+
+	return name
+}
+
 func (g GooseMigrator) Create() {
-	name := petname.Generate(1, "")
+	name := g.generateName()
 	goose.SetBaseFS(g.fsys)
 	err := goose.Create(g.db, g.dir, name, "sql")
 
@@ -60,8 +74,7 @@ func (g GooseMigrator) Create() {
 }
 
 func (g GooseMigrator) CreateWithStatement(up string, down string) {
-	randomNumber := rand.Intn(3) + 1
-	name := petname.Generate(randomNumber, "_")
+	name := g.generateName()
 	goose.SetBaseFS(g.fsys)
 
 	sqlMigrationTemplate := template.Must(template.New("goose.sql-migration").Parse(fmt.Sprintf(`-- +goose Up
@@ -90,6 +103,10 @@ func (g GooseMigrator) CreateFromGormModels(db *gorm.DB, dst ...interface{}) {
 }
 
 func (g GooseMigrator) Up() {
+	if g.noMigraion {
+		log.Fatal("No migration found!")
+	}
+
 	res, err := g.provider.Up(context.Background())
 	if err != nil {
 		panic(err)
@@ -99,6 +116,10 @@ func (g GooseMigrator) Up() {
 }
 
 func (g GooseMigrator) Down() {
+	if g.noMigraion {
+		log.Fatal("No migration found!")
+	}
+
 	res, err := g.provider.Down(context.Background())
 	if err != nil {
 		panic(err)

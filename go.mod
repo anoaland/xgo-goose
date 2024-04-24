@@ -3,6 +3,7 @@ module github.com/anoaland/xgo-goose
 go 1.21.6
 
 require (
+	github.com/dustinkirkland/golang-petname v0.0.0-20240422154211-76c06c4bde6b
 	github.com/mfridman/interpolate v0.0.2 // indirect
 	github.com/pressly/goose/v3 v3.18.0 // indirect
 	github.com/sethvargo/go-retry v0.2.4 // indirect
