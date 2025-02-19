@@ -3,7 +3,7 @@ module github.com/anoaland/xgo-goose
 go 1.21.6
 
 require (
-	github.com/anoaland/xgo v1.5.6
+	github.com/anoaland/xgo v1.6.0
 	github.com/dustinkirkland/golang-petname v0.0.0-20240422154211-76c06c4bde6b
 	github.com/pressly/goose/v3 v3.18.0
 	gorm.io/gorm v1.25.12
