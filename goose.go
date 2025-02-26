@@ -12,17 +12,18 @@ import (
 	petname "github.com/dustinkirkland/golang-petname"
 	"github.com/pressly/goose/v3"
 	"github.com/pressly/goose/v3/database"
+	"github.com/rs/zerolog"
 	"gorm.io/gorm"
 
 	dbutils "github.com/anoaland/xgo/db/utils"
 )
 
 type GooseMigrator struct {
-	db         *sql.DB
-	fsys       fs.FS
-	provider   *goose.Provider
-	dir        string
-	noMigraion bool
+	db      *sql.DB
+	fsys    fs.FS
+	dialect database.Dialect
+	dir     string
+	logger  goose.Logger
 }
 
 func NewMigrator(dialect database.Dialect, dsn string, fsys fs.FS, dir string) GooseMigrator {
@@ -31,29 +32,43 @@ func NewMigrator(dialect database.Dialect, dsn string, fsys fs.FS, dir string) G
 		panic(err)
 	}
 
-	provider, err := goose.NewProvider(
-		dialect,
-		db,
-		fsys,
-	)
-	goose.SetBaseFS(fsys)
+	defaultLogger := zerolog.New(zerolog.ConsoleWriter{Out: log.Writer()})
 
-	noMigraion := false
+	return GooseMigrator{
+		db:     db,
+		fsys:   fsys,
+		dir:    dir,
+		logger: NewZeroLogGooseLogger(&defaultLogger),
+	}
+}
+
+func (g GooseMigrator) SetLogger(logger *zerolog.Logger) {
+	goose.SetLogger(NewZeroLogGooseLogger(logger))
+}
+
+func (g GooseMigrator) setup() {
+	goose.SetLogger(g.logger)
+	goose.SetBaseFS(g.fsys)
+}
+
+func (g GooseMigrator) provider() *goose.Provider {
+	g.setup()
+	provider, err := goose.NewProvider(
+		g.dialect,
+		g.db,
+		g.fsys,
+	)
+
 	if err != nil {
 		if err == goose.ErrNoMigrations {
-			noMigraion = true
+			log.Println("No migration found!")
+			return nil
 		} else {
 			panic(err)
 		}
 	}
 
-	return GooseMigrator{
-		db:         db,
-		fsys:       fsys,
-		provider:   provider,
-		noMigraion: noMigraion,
-		dir:        dir,
-	}
+	return provider
 }
 
 func (g GooseMigrator) generateName() string {
@@ -65,7 +80,7 @@ func (g GooseMigrator) generateName() string {
 
 func (g GooseMigrator) Create() {
 	name := g.generateName()
-	goose.SetBaseFS(g.fsys)
+	g.setup()
 	err := goose.Create(g.db, g.dir, name, "sql")
 
 	if err != nil {
@@ -75,7 +90,7 @@ func (g GooseMigrator) Create() {
 
 func (g GooseMigrator) CreateWithStatement(up string, down string) {
 	name := g.generateName()
-	goose.SetBaseFS(g.fsys)
+	g.setup()
 
 	sqlMigrationTemplate := template.Must(template.New("goose.sql-migration").Parse(fmt.Sprintf(`-- +goose Up
 -- +goose StatementBegin
@@ -103,11 +118,12 @@ func (g GooseMigrator) CreateFromGormModels(db *gorm.DB, dst ...interface{}) {
 }
 
 func (g GooseMigrator) Up() {
-	if g.noMigraion {
-		log.Fatal("No migration found!")
+	provider := g.provider()
+	if provider == nil {
+		return
 	}
 
-	res, err := g.provider.Up(context.Background())
+	res, err := provider.Up(context.Background())
 	if err != nil {
 		panic(err)
 	}
@@ -116,16 +132,16 @@ func (g GooseMigrator) Up() {
 }
 
 func (g GooseMigrator) Down() {
-	if g.noMigraion {
-		log.Fatal("No migration found!")
+	provider := g.provider()
+	if provider == nil {
+		return
 	}
 
-	res, err := g.provider.Down(context.Background())
+	res, err := provider.Down(context.Background())
 	if err != nil {
+		g.logger.Fatalf("goose: %v", err)
 		panic(err)
 	}
 
 	log.Printf("%v", res)
 }
-
-// Create writes a new blank migration file.
