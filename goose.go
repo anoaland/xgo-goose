@@ -64,7 +64,7 @@ func (g GooseMigrator) provider() *goose.Provider {
 
 	if err != nil {
 		if err == goose.ErrNoMigrations {
-			g.logger.Warn().Msgf("No migration found!")
+			g.logger.Warn().Msgf("db migration: No migration found!")
 			return nil
 		} else {
 			g.logger.Panic().Err(err)
@@ -131,7 +131,7 @@ func (g GooseMigrator) Up() {
 		g.logger.Panic().Err(err)
 	}
 
-	g.logger.Info().Msgf("%v", res)
+	g.logger.Info().Msgf("db migration up: %v", res)
 }
 
 func (g GooseMigrator) Down() {
@@ -145,5 +145,5 @@ func (g GooseMigrator) Down() {
 		g.logger.Panic().Err(err)
 	}
 
-	g.logger.Info().Msgf("%v", res)
+	g.logger.Info().Msgf("db migration down: %v", res)
 }
