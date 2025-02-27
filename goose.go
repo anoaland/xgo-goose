@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
+
 	"math/rand"
 	"text/template"
 
@@ -23,31 +24,33 @@ type GooseMigrator struct {
 	fsys    fs.FS
 	dialect database.Dialect
 	dir     string
-	logger  goose.Logger
+	logger  *zerolog.Logger
 }
 
-func NewMigrator(dialect database.Dialect, dsn string, fsys fs.FS, dir string) GooseMigrator {
+func NewMigrator(dialect database.Dialect, dsn string, fsys fs.FS, dir string, loggers ...*zerolog.Logger) GooseMigrator {
+	var logger zerolog.Logger
+	if len(loggers) > 0 {
+		logger = *loggers[0]
+	} else {
+		logger = zerolog.New(zerolog.ConsoleWriter{Out: log.Writer()})
+	}
+
 	db, err := goose.OpenDBWithDriver(string(dialect), dsn)
 	if err != nil {
-		panic(err)
+		logger.Panic().Err(err)
 	}
-
-	defaultLogger := zerolog.New(zerolog.ConsoleWriter{Out: log.Writer()})
 
 	return GooseMigrator{
-		db:     db,
-		fsys:   fsys,
-		dir:    dir,
-		logger: NewZeroLogGooseLogger(&defaultLogger),
+		db:      db,
+		fsys:    fsys,
+		dir:     dir,
+		dialect: dialect,
+		logger:  &logger,
 	}
-}
-
-func (g GooseMigrator) SetLogger(logger *zerolog.Logger) {
-	goose.SetLogger(NewZeroLogGooseLogger(logger))
 }
 
 func (g GooseMigrator) setup() {
-	goose.SetLogger(g.logger)
+	goose.SetLogger(NewZeroLogGooseLogger(g.logger))
 	goose.SetBaseFS(g.fsys)
 }
 
@@ -61,10 +64,10 @@ func (g GooseMigrator) provider() *goose.Provider {
 
 	if err != nil {
 		if err == goose.ErrNoMigrations {
-			log.Println("No migration found!")
+			g.logger.Warn().Msgf("No migration found!")
 			return nil
 		} else {
-			panic(err)
+			g.logger.Panic().Err(err)
 		}
 	}
 
@@ -84,7 +87,7 @@ func (g GooseMigrator) Create() {
 	err := goose.Create(g.db, g.dir, name, "sql")
 
 	if err != nil {
-		panic(err)
+		g.logger.Panic().Err(err)
 	}
 }
 
@@ -108,7 +111,7 @@ SELECT 'down SQL query for %s';
 	err := goose.CreateWithTemplate(g.db, g.dir, sqlMigrationTemplate, name, "sql")
 
 	if err != nil {
-		panic(err)
+		g.logger.Panic().Err(err)
 	}
 }
 
@@ -125,10 +128,10 @@ func (g GooseMigrator) Up() {
 
 	res, err := provider.Up(context.Background())
 	if err != nil {
-		panic(err)
+		g.logger.Panic().Err(err)
 	}
 
-	log.Printf("%v", res)
+	g.logger.Info().Msgf("%v", res)
 }
 
 func (g GooseMigrator) Down() {
@@ -139,9 +142,8 @@ func (g GooseMigrator) Down() {
 
 	res, err := provider.Down(context.Background())
 	if err != nil {
-		g.logger.Fatalf("goose: %v", err)
-		panic(err)
+		g.logger.Panic().Err(err)
 	}
 
-	log.Printf("%v", res)
+	g.logger.Info().Msgf("%v", res)
 }
