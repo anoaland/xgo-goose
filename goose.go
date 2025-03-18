@@ -135,7 +135,7 @@ func (g GooseMigrator) Up() {
 
 	res, err := provider.Up(context.Background())
 	if err != nil {
-		g.logger.Panic().Err(err)
+		panic(err)
 	}
 
 	g.logger.Info().Msgf("db migration up: %v", res)
