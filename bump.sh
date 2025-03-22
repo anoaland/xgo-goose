@@ -10,15 +10,15 @@ fi
 
 # Check if version type argument is provided
 if [ $# -ne 1 ]; then
-    echo "Usage: $0 [major|minor|patch]"
+    echo "Usage: $0 [major|minor|patch|alpha]"
     exit 1
 fi
 
 VERSION_TYPE=$1
 
 # Validate version type
-if [ "$VERSION_TYPE" != "major" ] && [ "$VERSION_TYPE" != "minor" ] && [ "$VERSION_TYPE" != "patch" ]; then
-    echo "Error: Version type must be 'major', 'minor', or 'patch'"
+if [ "$VERSION_TYPE" != "major" ] && [ "$VERSION_TYPE" != "minor" ] && [ "$VERSION_TYPE" != "patch" ] && [ "$VERSION_TYPE" != "alpha" ]; then
+    echo "Error: Version type must be 'major', 'minor', 'patch', or 'alpha'"
     exit 1
 fi
 
@@ -34,6 +34,12 @@ IFS='.' read -r -a VERSION_PARTS <<< "$CURRENT_VERSION"
 MAJOR="${VERSION_PARTS[0]}"
 MINOR="${VERSION_PARTS[1]}"
 PATCH="${VERSION_PARTS[2]}"
+ALPHA=0
+
+# Check if current version has alpha component
+if [[ "$CURRENT_VERSION" =~ -alpha\.[0-9]+$ ]]; then
+    ALPHA=$(echo "$CURRENT_VERSION" | grep -o '[0-9]*$')
+fi
 
 # Increment version based on type
 case "$VERSION_TYPE" in
@@ -41,18 +47,28 @@ case "$VERSION_TYPE" in
         MAJOR=$((MAJOR + 1))
         MINOR=0
         PATCH=0
+        ALPHA=0
         ;;
     "minor")
         MINOR=$((MINOR + 1))
         PATCH=0
+        ALPHA=0
         ;;
     "patch")
         PATCH=$((PATCH + 1))
+        ALPHA=0
+        ;;
+    "alpha")
+        ALPHA=$((ALPHA + 1))
         ;;
 esac
 
 # Create new version string
-NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+if [ "$VERSION_TYPE" = "alpha" ]; then
+    NEW_VERSION="$MAJOR.$MINOR.$PATCH-alpha.$ALPHA"
+else
+    NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+fi
 
 # Update info.json with new version
 tmp=$(mktemp)
