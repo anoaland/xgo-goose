@@ -91,8 +91,15 @@ func (g GooseMigrator) Create() {
 	}
 }
 
-func (g GooseMigrator) CreateWithStatement(up string, down string) {
-	name := g.generateName()
+func (g GooseMigrator) CreateWithStatement(up string, down string, customName *string) {
+
+	name := ""
+	if customName == nil {
+		name = g.generateName()
+	} else {
+		name = *customName
+	}
+
 	g.setup()
 
 	sqlMigrationTemplate := template.Must(template.New("goose.sql-migration").Parse(fmt.Sprintf(`-- +goose Up
@@ -115,9 +122,9 @@ SELECT 'down SQL query for %s';
 	}
 }
 
-func (g GooseMigrator) CreateFromGormModels(db *gorm.DB, dst ...interface{}) {
+func (g GooseMigrator) CreateFromGormModels(db *gorm.DB, customName *string, dst ...interface{}) {
 	sql := dbutils.PrintAutoMigrateSql(db, dst...)
-	g.CreateWithStatement(sql, "-- TODO: Create your own down migration")
+	g.CreateWithStatement(sql, "-- TODO: Create your own down migration", customName)
 }
 
 func (g GooseMigrator) Up() {
@@ -128,7 +135,7 @@ func (g GooseMigrator) Up() {
 
 	res, err := provider.Up(context.Background())
 	if err != nil {
-		g.logger.Panic().Err(err)
+		panic(err)
 	}
 
 	g.logger.Info().Msgf("db migration up: %v", res)
