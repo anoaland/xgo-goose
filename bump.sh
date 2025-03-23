@@ -33,12 +33,19 @@ fi
 IFS='.' read -r -a VERSION_PARTS <<< "$CURRENT_VERSION"
 MAJOR="${VERSION_PARTS[0]}"
 MINOR="${VERSION_PARTS[1]}"
-PATCH="${VERSION_PARTS[2]}"
-ALPHA=0
 
-# Check if current version has alpha component
-if [[ "$CURRENT_VERSION" =~ -alpha\.[0-9]+$ ]]; then
-    ALPHA=$(echo "$CURRENT_VERSION" | grep -o '[0-9]*$')
+# Handle patch and alpha parts properly
+if [[ "$CURRENT_VERSION" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)(-alpha\.([0-9]+))?$ ]]; then
+    PATCH="${BASH_REMATCH[3]}"
+    if [[ -n "${BASH_REMATCH[5]}" ]]; then
+        ALPHA="${BASH_REMATCH[5]}"
+    else
+        ALPHA=0
+    fi
+else
+    # Fallback if regex doesn't match
+    PATCH="${VERSION_PARTS[2]}"
+    ALPHA=0
 fi
 
 # Increment version based on type
