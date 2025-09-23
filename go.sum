@@ -10,8 +10,8 @@ github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 h1:TngWCqHvy9oXAN6lEV
 github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5/go.mod h1:lmUJ/7eu/Q8D7ML55dXQrVaamCz2vxCfdQBasLZfHKk=
 github.com/andybalholm/brotli v1.0.6 h1:Yf9fFpf49Zrxb9NlQaluyE92/+X7UVHlhMNJN2sxfOI=
 github.com/andybalholm/brotli v1.0.6/go.mod h1:fO7iG3H7G2nSZ7m0zPUDn85XEX2GTukHGRSepvi9Eig=
-github.com/anoaland/xgo v1.7.3 h1:MZCmnXX71+Ri8zh9FZnC6//9apvgpl583zU8RVNZv2A=
-github.com/anoaland/xgo v1.7.3/go.mod h1:UVRHXh3obo+ys2O0q1Kzt1nO3M7sOprs6ymqI+sxprM=
+github.com/anoaland/xgo v1.7.4 h1:Ec7wltgLn4XoMgfArsQx0I9jm9K6gPhYCrjquKaIC7c=
+github.com/anoaland/xgo v1.7.4/go.mod h1:l1zg1/j2re7vXi2/USOnhPxW29NZPVNrBcgkb0KgQuc=
 github.com/antlr/antlr4/runtime/Go/antlr/v4 v4.0.0-20230512164433-5d1fd1a340c9 h1:goHVqTbFX3AIo0tzGr14pgfAW2ZfPChKO21Z9MGf/gk=
 github.com/antlr/antlr4/runtime/Go/antlr/v4 v4.0.0-20230512164433-5d1fd1a340c9/go.mod h1:pSwJ0fSY5KhvocuWSx4fz3BA8OrA1bQn+K1Eli3BRwM=
 github.com/cenkalti/backoff/v4 v4.2.1 h1:y4OZtCnogmCPw98Zjyt5a6+QwPLGkiQsYW5oUqylYbM=
